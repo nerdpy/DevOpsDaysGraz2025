@@ -31,8 +31,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: '8.0.x' }
 
-      - name: Restore
-        run: dotnet restore .\src
+      # - name: Restore
+        # run: dotnet restore .\src
 
       - name: Build
         run: dotnet build -c Release .\src --no-restore
@@ -40,22 +40,22 @@ jobs:
       - name: Run Core.Tests
         run: dotnet test -c Release .\src\DevOpsDaysTasks.Core.Tests --no-build --logger html --results-directory TestResults-Core.Tests
 
-      - name: Upload Core.Tests results
-        uses: actions/upload-artifact@v4
-        with:
-          name: TestResults-Core.Tests
-          path: TestResults-Core.Tests/
-        if: ${{ always() }}
+      # # - name: Upload Core.Tests results
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: TestResults-Core.Tests
+      #     path: TestResults-Core.Tests/
+      #   if: ${{ always() }}
 
       - name: Run IntegrationTests
         run: dotnet test -c Release .\src\DevOpsDaysTasks.IntegrationTests --no-build --logger html --results-directory TestResults-IntegrationTests
 
-      - name: Upload Core.Tests results
-        uses: actions/upload-artifact@v4
-        with:
-          name: TestResults-IntegrationTests
-          path: TestResults-IntegrationTests/
-        if: ${{ always() }}
+      # - name: Upload Core.Tests results
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: TestResults-IntegrationTests
+      #     path: TestResults-IntegrationTests/
+      #   if: ${{ always() }}
 
       - name: Publish Release
         env:
