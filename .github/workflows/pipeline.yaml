@@ -32,25 +32,11 @@ jobs:
         with: { dotnet-version: '8.0.x' }
 
       - name: Run Core.Tests
-        run: dotnet test -c Release .\src\DevOpsDaysTasks.Core.Tests --no-build --logger html --results-directory TestResults-Core.Tests
-
-      # # - name: Upload Core.Tests results
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: TestResults-Core.Tests
-      #     path: TestResults-Core.Tests/
-      #   if: ${{ always() }}
-
+        run: dotnet test .\src\DevOpsDaysTasks.Core.Tests
+ 
       - name: Run IntegrationTests
-        run: dotnet test -c Release .\src\DevOpsDaysTasks.IntegrationTests --no-build --logger html --results-directory TestResults-IntegrationTests
-
-      # - name: Upload Core.Tests results
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: TestResults-IntegrationTests
-      #     path: TestResults-IntegrationTests/
-      #   if: ${{ always() }}
-
+        run: dotnet test .\src\DevOpsDaysTasks.IntegrationTests
+        
       - name: Publish Release
         env:
           VERSION: ${{ inputs.version || '0.0.0' }}
