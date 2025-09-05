@@ -1,43 +1,107 @@
 name: Release Pipeline
- 
+
 on:
-  push:
- 
+  push: {}
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version of the release
+        required: true
+        type: string
+      versionName:
+        description: Version name of the release
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
 jobs:
-  release-pipeline:
-    name: Release Pipeline
-    runs-on:
-      - windows-latest
+  build-test-release:
+    name: Build/Test/Release
+    runs-on: windows-latest
+    env:
+      CERT_NAME: cert.pfx
+      EXTERNAL_FILES_PATH: externalFiles
+      RELEASE_ZIP_NAME: DevOpsDaysTasks-${{ inputs.version }}-${{ inputs.versionName }}.zip
+
     steps:
       - uses: actions/checkout@v4
-     
+      
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: '8.0.x' }
- 
+
+      - name: Restore
+        run: dotnet restore .\src
+
+      - name: Build
+        run: dotnet build -c Release .\src --no-restore
+
       - name: Run Core.Tests
-        run: dotnet test .\src\DevOpsDaysTasks.Core.Tests
- 
+        run: dotnet test -c Release .\src\DevOpsDaysTasks.Core.Tests --no-build --logger html --results-directory TestResults-Core.Tests
+
+      - name: Upload Core.Tests results
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults-Core.Tests
+          path: TestResults-Core.Tests/
+        if: ${{ always() }}
+
       - name: Run IntegrationTests
-        run: dotnet test .\src\DevOpsDaysTasks.IntegrationTests
- 
+        run: dotnet test -c Release .\src\DevOpsDaysTasks.IntegrationTests --no-build --logger html --results-directory TestResults-IntegrationTests
+
+      - name: Upload Core.Tests results
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults-IntegrationTests
+          path: TestResults-IntegrationTests/
+        if: ${{ always() }}
+
       - name: Publish Release
-        run: dotnet publish -c Release src\DevOpsDaysTasks.UI -o DevOpsDaysTasks /p:Version=2.0.0 /p:VersionName=Bear
- 
+        env:
+          VERSION: ${{ inputs.version || '0.0.0' }}
+          VERSION_NAME: ${{ inputs.versionName || 'Dev' }}
+        run: dotnet publish -c Release src\DevOpsDaysTasks.UI -o DevOpsDaysTasks /p:Version=${{ env.VERSION }} /p:VersionName=${{ env.VERSION_NAME }}
+
+      - name: Checkout external files
+        uses: actions/checkout@v4
+        with:
+          repository: martinzimmermann/DevOpsDaysGraz2025-ExternalFiles
+          path: ${{ env.EXTERNAL_FILES_PATH }}
+          #token: ${{ secrets.PAT }} A personal access token (PAT) is necessary for private repositories
+
       - name: Copy templates
         run: |
           mkdir DevOpsDaysTasks/Templates
-          cp workshop_material\default-tasks.xml DevOpsDaysTasks/Templates
- 
+          cp ${{ env.EXTERNAL_FILES_PATH }}\default-tasks.xml DevOpsDaysTasks/Templates
+
       - name: Copy help
         run: |
           mkdir DevOpsDaysTasks/Help
-          cp workshop_material/Help.pdf DevOpsDaysTasks/Help
- 
+          cp ${{ env.EXTERNAL_FILES_PATH }}/Help.pdf DevOpsDaysTasks/Help
+
+      - name: Create PFX certificate
+        run: |
+          $bas64Pfx = "${{ secrets.SIGN_CERTIFICATE_PFX_BASE64 }}"
+          $encodedBytes = [System.Convert]::FromBase64String($bas64Pfx)
+          Set-Content ${{ env.CERT_NAME }} -Value $encodedBytes -AsByteStream
+
       - name: Sign release
-        run: .\scripts\sign.ps1 .\DevOpsDaysTasks\DevOpsDaysTasks.UI.exe -PfxFile .\workshop_material\devopsdays_tasks_codesign.pfx -PfxPassword Password
- 
+        run: .\scripts\sign.ps1 .\DevOpsDaysTasks\DevOpsDaysTasks.UI.exe -PfxFile ${{ env.CERT_NAME }} -PfxPassword ${{ secrets.SIGN_CERTIFICATE_PASSWORD }}
+
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
           name: DevOpsDaysTasks
           path: DevOpsDaysTasks
+
+      - name: Zip Release
+        if: ${{ inputs.version }}
+        run: Compress-Archive -Path ./DevOpsDaysTasks -DestinationPath ${{ env.RELEASE_ZIP_NAME }}
+
+      - name: GitHub release
+        if: ${{ inputs.version }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          files: ${{ env.RELEASE_ZIP_NAME }}
