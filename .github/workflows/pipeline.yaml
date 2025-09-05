@@ -24,8 +24,16 @@ jobs:
 
       - name: copy template
         run: |
-          mkdir DevOpsDaysTasks\Templates
-          cp workshop_material\default-task.xml DevOpsDayTask\Help
+          mkdir DevOpsDaysTasks/Templates
+          cp workshop_material/default-task.xml DevOpsDayTask/Template
+
+      - name: copy help
+        run: |
+          mkdir DevOpsDaysTasks/Help
+          cp workshop_material/default-task.xml DevOpsDayTask/Help
+
+
+
 
       - name: sign release
         run: .\scripts\sign.ps1 .\DevOpsDaysTasks\DevOpsDaysTasks.UI.exe -PfxFile .\workshop_material\devopsdays_tasks_codesign.pfx -PfxPassword Password
