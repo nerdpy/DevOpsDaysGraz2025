@@ -13,8 +13,32 @@ jobs:
         uses: actions/setup-dotnet@v4
         with: 
           dotnet-version: '8.0.x'
-
       - name: run core.tests
         run: dotnet test .\src\DevOpsDaysTasks.Core.Tests
+
+      - name: run integrationTest
+        run: dotnet test .\src\DevOpsDaysTasks.IntegrationTests
+
+      - name: publish build
+        run: dotnet publish -c Release src\DevOpsDaysTasks.UI\ -o DevOpsDaysTasks /p:Version=1.0.0 /p:VersionName=Bobcat
+
+      - name: copy template
+        run: |
+          mkdir DevOpsDaysTasks\Templates
+          cp workshop_material\default-task.xml DevOpsDayTask\Help
+
+      - name: sign release
+        run: .\scripts\
+      
+
+      
       - name: Hello Pipeline
         run: echo "Hello Pipeline"
+        
+
+
+
+
+
+
+
