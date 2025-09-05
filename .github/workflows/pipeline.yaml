@@ -1,52 +1,43 @@
 name: Release Pipeline
-
+ 
 on:
-  push: {}
-
+  push:
+ 
 jobs:
   release-pipeline:
     name: Release Pipeline
-    runs-on: windows-latest
+    runs-on:
+      - windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Dotnet tools
-        uses: actions/setup-dotnet@v4
-        with: 
-          dotnet-version: '8.0.x'
-      - name: run core.tests
+     
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+ 
+      - name: Run Core.Tests
         run: dotnet test .\src\DevOpsDaysTasks.Core.Tests
-
-      - name: run integrationTest
+ 
+      - name: Run IntegrationTests
         run: dotnet test .\src\DevOpsDaysTasks.IntegrationTests
-
-      - name: publish build
-        run: dotnet publish -c Release src\DevOpsDaysTasks.UI\ -o DevOpsDaysTasks /p:Version=1.0.0 /p:VersionName=Bobcat
-
-      - name: copy template
+ 
+      - name: Publish Release
+        run: dotnet publish -c Release src\DevOpsDaysTasks.UI -o DevOpsDaysTasks /p:Version=2.0.0 /p:VersionName=Bear
+ 
+      - name: Copy templates
         run: |
           mkdir DevOpsDaysTasks/Templates
-          cp workshop_material/default-task.xml DevOpsDayTask/Template
-
-      - name: copy help
+          cp workshop_material\default-tasks.xml DevOpsDaysTasks/Templates
+ 
+      - name: Copy help
         run: |
           mkdir DevOpsDaysTasks/Help
-          cp workshop_material/default-task.xml DevOpsDayTask/Help
-
-
-
-
-      - name: sign release
+          cp workshop_material/Help.pdf DevOpsDaysTasks/Help
+ 
+      - name: Sign release
         run: .\scripts\sign.ps1 .\DevOpsDaysTasks\DevOpsDaysTasks.UI.exe -PfxFile .\workshop_material\devopsdays_tasks_codesign.pfx -PfxPassword Password
-      
-
-      
-      - name: Hello Pipeline
-        run: echo "Hello Pipeline"
-        
-
-
-
-
-
-
-
+ 
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: DevOpsDaysTasks
+          path: DevOpsDaysTasks
